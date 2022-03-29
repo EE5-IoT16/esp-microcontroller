@@ -10,6 +10,7 @@ static const char *TAG = "pulse_counter";
 #define LEDC_OUTPUT_IO      18 // Output GPIO of a sample 1 Hz pulse generator
 
 int firstCount = 0;
+int heartRate  = 0;
 
 xQueueHandle pcnt_evt_queue;   // A queue to handle pulse counter events
 int pcnt_unit;
@@ -142,6 +143,7 @@ void startToCount(int period)
     {
         firstCount =1;
         count++;
+        count = count*2;
 
     }
     if (res == pdTRUE) {
@@ -163,7 +165,7 @@ void startToCount(int period)
         }
         } 
         else {
-            int heartRate = count*12; 
+            heartRate += count*12; 
+            heartRate /=2;
             ESP_LOGI(TAG, "Current counter value :%d, heart rate :%d bps", count,heartRate);}
-
 }
