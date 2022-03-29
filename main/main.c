@@ -3,6 +3,7 @@ static const char *TAG = "main";
 #include "i2c_sensor.h"
 #include "pulse_counter.h"
 #include <stdio.h>  
+#include "http_client.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h" 
 
@@ -43,7 +44,9 @@ void tPulse(void* arg)
 
 void app_main(void)
 {
+    
     ESP_LOGI(TAG, "main process starts to run");
+    /*
     controller.sensorC = 1;
     controller.counterC = 1;
     xTaskCreatePinnedToCore(tSensor,"sensor",2048,NULL,1,NULL,tskNO_AFFINITY);
@@ -51,4 +54,6 @@ void app_main(void)
     vTaskDelay(300000/ portTICK_PERIOD_MS);
     controller.sensorC = 0;
     controller.counterC = 0;
+    */
+    sample_api_req_hardcoded(50, 12345);
 }
