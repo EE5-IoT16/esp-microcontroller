@@ -4,6 +4,7 @@ static const char *TAG = "main";
 #include "pulse_counter.h"
 #include <stdio.h>  
 #include "http_client.h"
+#include "blufi.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h" 
 
@@ -55,5 +56,6 @@ void app_main(void)
     controller.sensorC = 0;
     controller.counterC = 0;
     */
-    sample_api_req_hardcoded(50, 12345);
+    //sample_api_req_hardcoded(50, 12345);
+    run_blufi();
 }
