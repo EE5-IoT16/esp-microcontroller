@@ -22,7 +22,7 @@ struct sensordata
 };
 
 volatile struct controller controller;
-//volatile sensordata sensordata;
+volatile struct sensordata sensordata;
 volatile int bpm;
 
 void tSensor(void* arg)
@@ -60,11 +60,19 @@ void  tHttpSensor(void* arg)
 {
     do
     {
+        vTaskDelay(10000/ portTICK_PERIOD_MS);
         if (wifi_connected())
         {
             
         }
-        
+        else
+        {
+            char message[100]= " ";
+            sprintf(message,"WIFI disconnted, your current step is %d ",sensordata.steps);
+            uint32_t length = strlen(message);
+            esp_blufi_send_custom_data((unsigned char*)message,length);
+        }
+    
     } while (controller.http_i2c);
     vTaskDelete(NULL);
 }
