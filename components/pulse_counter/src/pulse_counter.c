@@ -169,3 +169,8 @@ void startToCount(int period)
             heartRate /=2;
             ESP_LOGI(TAG, "Current counter value :%d, heart rate :%d bps", count,heartRate);}
 }
+
+int getHeartRate(void)
+{
+    return heartRate;
+}

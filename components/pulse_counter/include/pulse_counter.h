@@ -9,3 +9,4 @@
 void counter_init(void);
 void startToCount(int period);
 void counter_init(void);
+int getHeartRate(void);

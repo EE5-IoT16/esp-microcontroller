@@ -364,3 +364,14 @@ void run_blufi(void)
 
     BLUFI_INFO("BLUFI VERSION %04x\n", esp_blufi_get_version());
 }
+int ble_connected(void)
+{
+    if(ble_is_connected == true)  return 1;
+    else return 0;
+}
+
+int wifi_connected(void)
+{
+    if(gl_sta_connected == true) return 1;
+    else return 0 ;
+}
