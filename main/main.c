@@ -1,12 +1,17 @@
 static const char *TAG = "main";
-
 #include "i2c_sensor.h"
 #include "pulse_counter.h"
 #include <stdio.h>  
+#include "nvs_flash.h"
+#include "nvs.h"
 #include "http_client.h"
 #include "blufi.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h" 
+
+nvs_handle_t data_handle;
+esp_err_t err;
+
 
 struct controller
 {
@@ -18,12 +23,14 @@ struct controller
 
 struct sensordata
 {
-    int steps;
+    uint32_t steps;
+    float temperature;
+    int detectFall;
 };
 
 volatile struct controller controller;
-volatile struct sensordata sensordata;
-volatile int bpm;
+struct sensordata sensordata;
+uint8_t bpm;
 
 void tSensor(void* arg)
 {
@@ -31,6 +38,7 @@ void tSensor(void* arg)
     do
     {
         readDataFromSensor(1000);
+        err = nvs_get_u32(data_handle, "step_counter", &(sensordata.steps));
     }
     while(controller.sensorC);
     unitializedI2C();
@@ -44,9 +52,10 @@ void tPulse(void* arg)
     do
     {
         startToCount(5000);
-        bpm = getHeartRate(); 
+        err = nvs_get_u8(data_handle, "bpm", &bpm);
 
     }while (controller.counterC);
+    unitializePulseCounter();
     vTaskDelete(NULL);
 
 }
@@ -63,7 +72,7 @@ void  tHttpSensor(void* arg)
         vTaskDelay(10000/ portTICK_PERIOD_MS);
         if (wifi_connected())
         {
-            
+           sample_api_req_hardcoded(1,sensordata.steps,STEP);
         }
         else
         {
@@ -83,7 +92,7 @@ void tHttpBpm(void* arg)
     {   vTaskDelay(10000/ portTICK_PERIOD_MS);
         if (wifi_connected())
         {
-            sample_api_req_hardcoded(1,bpm);
+            sample_api_req_hardcoded(1,bpm,HEARTRATE);
         }
         else 
         {
@@ -92,7 +101,6 @@ void tHttpBpm(void* arg)
             uint32_t length = strlen(message);
             esp_blufi_send_custom_data((unsigned char*)message,length);
         }
-        
     } while (controller.http_bpm);
      vTaskDelete(NULL);
 }
@@ -107,7 +115,27 @@ void app_main(void)
     {
          vTaskDelay(500/ portTICK_PERIOD_MS);
     }
-    controller.sensorC = 1;
+
+    //////////////////////////////////////////////////////////////////////////////////////
+    err = nvs_flash_init();
+    if (err == ESP_ERR_NVS_NO_FREE_PAGES || err == ESP_ERR_NVS_NEW_VERSION_FOUND) {
+        // NVS partition was truncated and needs to be erased
+        // Retry nvs_flash_init
+        ESP_ERROR_CHECK(nvs_flash_erase());
+        err = nvs_flash_init();
+    }
+    ESP_ERROR_CHECK( err );
+    printf("\n");
+    printf("Opening Non-Volatile Storage (NVS) handle... \n");
+    err = nvs_open("storage", NVS_READWRITE, &data_handle);
+    if (err != ESP_OK) 
+    {
+        printf("Error (%s) opening NVS handle!\n", esp_err_to_name(err)); 
+    }
+    err = nvs_open("storage", NVS_READONLY, &data_handle);
+    //////////////////////////////////////////////////////////////////////////////////////
+
+    controller.sensorC  = 1;
     controller.counterC = 1;
     controller.http_i2c = 1;
     controller.http_bpm = 1;
@@ -117,11 +145,12 @@ void app_main(void)
     xTaskCreatePinnedToCore(tHttpBpm,"httpBpm",2048,NULL,1,NULL,tskNO_AFFINITY);
     while(ble_connected())
     {
-         vTaskDelay(5000/ portTICK_PERIOD_MS);
+         vTaskDelay(500/ portTICK_PERIOD_MS);
     }
     controller.sensorC = 0;
     controller.counterC = 0;
     controller.http_i2c = 0;
     controller.http_bpm = 0;
+    nvs_close(data_handle);
     ESP_LOGI(TAG, "device disconnected\n");
 }

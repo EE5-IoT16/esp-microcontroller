@@ -5,8 +5,10 @@
 #include "driver/pcnt.h"
 #include "esp_attr.h"
 #include "esp_log.h"
+#include "nvs_flash.h"
+#include "nvs.h"
 
 void counter_init(void);
 void startToCount(int period);
 void counter_init(void);
-int getHeartRate(void);
+void unitializePulseCounter(void);

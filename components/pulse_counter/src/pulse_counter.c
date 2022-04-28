@@ -10,7 +10,9 @@ static const char *TAG = "pulse_counter";
 #define LEDC_OUTPUT_IO      18 // Output GPIO of a sample 1 Hz pulse generator
 
 int firstCount = 0;
-int heartRate  = 0;
+uint8_t heartRate  = 0;
+esp_err_t err;
+nvs_handle_t my_handle;
 
 xQueueHandle pcnt_evt_queue;   // A queue to handle pulse counter events
 int pcnt_unit;
@@ -123,6 +125,12 @@ void counter_init(void)
     /* Initialize PCNT event queue and PCNT functions */
     pcnt_evt_queue = xQueueCreate(10, sizeof(pcnt_evt_t));
     pcnt_example_init(pcnt_unit);
+
+    err = nvs_open("storage", NVS_READWRITE, &my_handle);
+    if (err != ESP_OK) 
+    {
+        printf("Error (%s) opening NVS handle!\n", esp_err_to_name(err)); 
+    }
 }
 
 
@@ -167,10 +175,16 @@ void startToCount(int period)
         else {
             heartRate += count*12; 
             heartRate /=2;
-            ESP_LOGI(TAG, "Current counter value :%d, heart rate :%d bps", count,heartRate);}
+            //ESP_LOGI(TAG, "Current counter value :%d, heart rate :%d bps", count,heartRate);
+            }
+        
+        err = nvs_set_u8(my_handle, "bpm", heartRate);
+        err = nvs_commit(my_handle);
 }
 
-int getHeartRate(void)
+void unitializePulseCounter(void)
 {
-    return heartRate;
+    nvs_close(my_handle);
 }
+
+

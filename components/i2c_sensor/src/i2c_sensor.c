@@ -183,7 +183,7 @@ void i2cSensor_init(void)
     ESP_ERROR_CHECK(mpu9250_register_write_byte(SMPLRT_DIV, 0x07));
 
     //////////////////////////////////////////////////////////////////////////////////////
-    err = nvs_flash_init();
+    /*err = nvs_flash_init();
     if (err == ESP_ERR_NVS_NO_FREE_PAGES || err == ESP_ERR_NVS_NEW_VERSION_FOUND) {
         // NVS partition was truncated and needs to be erased
         // Retry nvs_flash_init
@@ -193,6 +193,9 @@ void i2cSensor_init(void)
     ESP_ERROR_CHECK( err );
     printf("\n");
     printf("Opening Non-Volatile Storage (NVS) handle... \n");
+    */
+
+
     err = nvs_open("storage", NVS_READWRITE, &my_handle);
     if (err != ESP_OK) 
     {
@@ -203,7 +206,6 @@ void i2cSensor_init(void)
     vTaskDelay(200 / portTICK_PERIOD_MS);
     getAccelOffset();
     getGyroOffset();
-
 }
 
 
@@ -263,9 +265,10 @@ void readDataFromSensor(int frequency)
         //printf("Committing updates in NVS ... ");
         err = nvs_commit(my_handle);
         //printf((err != ESP_OK) ? "Failed!\n" : "Done\n");
+        /*
         uint32_t test;
         err = nvs_get_u32(my_handle, "step_counter", &test);
-        printf("step = %d\n\n", test);
+        printf("step = %d\n\n", test);*/
     /*
         // Read
         printf("Reading ax from NVS ... ");
@@ -292,4 +295,7 @@ void unitializedI2C(void)
 {
     ESP_ERROR_CHECK(i2c_driver_delete(I2C_MASTER_NUM));
     ESP_LOGI(TAG, "I2C unitialized successfully");
+    nvs_close(my_handle);
 }
+
+

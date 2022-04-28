@@ -14,6 +14,16 @@
 #include <stdio.h>
 #include "esp_http_client.h"
 
+typedef enum
+{
+    HEARTRATE,
+    ACCEL,
+    GYRO,
+    TEMPERATURE,
+    STEP
+} API_NODES_t;
+
 esp_err_t _http_event_handler(esp_http_client_event_t *evt);
 void run(void);
-void sample_api_req_hardcoded(int deviceID, int bpm);
+
+void sample_api_req_hardcoded(int deviceID, int data, API_NODES_t type);

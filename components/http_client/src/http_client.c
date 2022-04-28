@@ -109,20 +109,14 @@ esp_err_t _http_event_handler(esp_http_client_event_t *evt)
     return ESP_OK;
 }
 
-typedef enum
-{
-    HEARTRATE,
-    ACCEL,
-    GYRO,
-    TEMPERATURE
-} API_NODES_t;
+
 
 static char *createPostUrl(API_NODES_t, int, ...);
 
-void sample_api_req_hardcoded(int deviceID, int bpm)
+void sample_api_req_hardcoded(int deviceID, int bpm,  API_NODES_t type)
 {
     char local_response_buffer[MAX_HTTP_OUTPUT_BUFFER] = {0};    
-    API_NODES_t currentNode = TEMPERATURE;
+    API_NODES_t currentNode = type;
     char *result_url = createPostUrl(currentNode, 2, 50, 500); // others
 
     esp_http_client_config_t config = {
@@ -257,7 +251,7 @@ static void http_test_task(void *pvParameters)
 {
     ESP_LOGI(TAG, "Sending data to Temperature API");
     ESP_LOGI(TAG, "MY EXAMPLE STARTS HERE \n-------------------------------------------------------------");
-    sample_api_req_hardcoded(50, 12345);
+    //sample_api_req_hardcoded(50, 12345);
     ESP_LOGI(TAG, "MY EXAMPLE ENDS HERE \n-------------------------------------------------------------");
 
     //ESP_LOGI(TAG, "Finish http example");
