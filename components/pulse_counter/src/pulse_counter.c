@@ -175,7 +175,7 @@ void startToCount(int period)
         else {
             heartRate += count*12; 
             heartRate /=2;
-            //ESP_LOGI(TAG, "Current counter value :%d, heart rate :%d bps", count,heartRate);
+            ESP_LOGI(TAG, "Current counter value :%d, heart rate :%d bps", count,heartRate);
             }
         
         err = nvs_set_u8(my_handle, "bpm", heartRate);

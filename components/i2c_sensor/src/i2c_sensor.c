@@ -251,7 +251,7 @@ void readDataFromSensor(int frequency)
     short temp = (int16_t)((data[0] << 8) | data[1]) ;
     float temperature = 21.00f + ((((float)temp-333.87f*6))/333.87f);
     printf("temperature = %f°C\n", temperature);
-    printf("state:%d, step:%d\n",state,step);
+    printf("state:%d, step:%d\n\n",state,step);
 
         // Write
         //printf("Updating ax in NVS ... ");

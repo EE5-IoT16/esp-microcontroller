@@ -81,7 +81,7 @@ void  tHttpSensor(void* arg)
             uint32_t length = strlen(message);
             esp_blufi_send_custom_data((unsigned char*)message,length);
         }
-    
+
     } while (controller.http_i2c);
     vTaskDelete(NULL);
 }
@@ -107,7 +107,7 @@ void tHttpBpm(void* arg)
 
 void app_main(void)
 {
-    
+    while(1){
     ESP_LOGI(TAG, "main process starts to run\n");
     xTaskCreatePinnedToCore(tBlufi,"blufi",4096,NULL,2,NULL,tskNO_AFFINITY);
     
@@ -153,4 +153,5 @@ void app_main(void)
     controller.http_bpm = 0;
     nvs_close(data_handle);
     ESP_LOGI(TAG, "device disconnected\n");
+    }
 }
