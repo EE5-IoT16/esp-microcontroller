@@ -12,7 +12,6 @@ static const char *TAG = "main";
 nvs_handle_t data_handle;
 esp_err_t err;
 
-
 struct controller
 {
     int sensorC;
@@ -30,7 +29,7 @@ struct sensordata
 
 volatile struct controller controller;
 struct sensordata sensordata;
-uint8_t bpm;
+int bpm;
 
 void tSensor(void* arg)
 {
@@ -54,6 +53,7 @@ void tPulse(void* arg)
         startToCount(5000);
         err = nvs_get_u8(data_handle, "bpm", &bpm);
 
+
     }while (controller.counterC);
     unitializePulseCounter();
     vTaskDelete(NULL);
@@ -69,7 +69,7 @@ void  tHttpSensor(void* arg)
 {
     do
     {
-        vTaskDelay(10000/ portTICK_PERIOD_MS);
+        vTaskDelay(5000/ portTICK_PERIOD_MS);
         if (wifi_connected())
         {
            sample_api_req_hardcoded(1,sensordata.steps,STEP);
@@ -89,7 +89,7 @@ void  tHttpSensor(void* arg)
 void tHttpBpm(void* arg)
 {
     do
-    {   vTaskDelay(10000/ portTICK_PERIOD_MS);
+    {   vTaskDelay(5000/ portTICK_PERIOD_MS);
         if (wifi_connected())
         {
             sample_api_req_hardcoded(1,bpm,HEARTRATE);
@@ -109,13 +109,11 @@ void app_main(void)
 {
     while(1){
     ESP_LOGI(TAG, "main process starts to run\n");
-    xTaskCreatePinnedToCore(tBlufi,"blufi",4096,NULL,2,NULL,tskNO_AFFINITY);
-    
+    xTaskCreatePinnedToCore(tBlufi,"blufi",5000,NULL,2,NULL,tskNO_AFFINITY);
     while (!ble_connected())
     {
          vTaskDelay(500/ portTICK_PERIOD_MS);
     }
-
     //////////////////////////////////////////////////////////////////////////////////////
     err = nvs_flash_init();
     if (err == ESP_ERR_NVS_NO_FREE_PAGES || err == ESP_ERR_NVS_NEW_VERSION_FOUND) {
@@ -141,8 +139,10 @@ void app_main(void)
     controller.http_bpm = 1;
     xTaskCreatePinnedToCore(tSensor,"sensor",2048,NULL,1,NULL,tskNO_AFFINITY);
     xTaskCreatePinnedToCore(tPulse,"pulse",2048,NULL,1,NULL,tskNO_AFFINITY);
-    xTaskCreatePinnedToCore(tHttpSensor,"httpSensor",2048,NULL,1,NULL,tskNO_AFFINITY);
-    xTaskCreatePinnedToCore(tHttpBpm,"httpBpm",2048,NULL,1,NULL,tskNO_AFFINITY);
+    vTaskDelay(500/ portTICK_PERIOD_MS);
+    xTaskCreatePinnedToCore(tHttpSensor,"httpSensor",10240,NULL,1,NULL,tskNO_AFFINITY);
+    xTaskCreatePinnedToCore(tHttpBpm,"httpBpm",10240,NULL,1,NULL,tskNO_AFFINITY);
+    
     while(ble_connected())
     {
          vTaskDelay(500/ portTICK_PERIOD_MS);

@@ -181,7 +181,7 @@ static char *createPostUrl(API_NODES_t api_node, int params, ...)
 
             if (((int)(sizeof(params_arr) / sizeof(int))) > 1)
             {
-                strcat(url_pointer, "?deviceId=");
+                strcat(url_pointer, "?userId=");
                 sprintf(buffer, "%d", params_arr[0]);
                 strcat(url_pointer, buffer);
 
@@ -251,7 +251,7 @@ static void http_test_task(void *pvParameters)
 {
     ESP_LOGI(TAG, "Sending data to Temperature API");
     ESP_LOGI(TAG, "MY EXAMPLE STARTS HERE \n-------------------------------------------------------------");
-    //sample_api_req_hardcoded(50, 12345);
+    sample_api_req_hardcoded(50, 12345,HEARTRATE);
     ESP_LOGI(TAG, "MY EXAMPLE ENDS HERE \n-------------------------------------------------------------");
 
     //ESP_LOGI(TAG, "Finish http example");
