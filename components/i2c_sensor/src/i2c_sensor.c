@@ -1,4 +1,5 @@
 #include "i2c_sensor.h"
+
 static const char *TAG = "i2c-sensor";
 
 #define I2C_MASTER_SCL_IO           CONFIG_I2C_MASTER_SCL      /*!< GPIO number used for I2C master clock */
@@ -44,7 +45,8 @@ static const char *TAG = "i2c-sensor";
 
 esp_err_t err;
 nvs_handle_t my_handle;
-
+int ReadingError;
+int WirtingError;
 
 struct accelOffset
 {
@@ -158,6 +160,8 @@ void stepCounter(short ay)
 
 void i2cSensor_init(void)
 {
+    ReadingError = 0;
+    WirtingError = 0;
     ESP_ERROR_CHECK(i2c_master_init());
     ESP_LOGI(TAG, "I2C initialized successfully");
 
@@ -182,30 +186,22 @@ void i2cSensor_init(void)
     /*Set gyro sample rate to 125Hz*/
     ESP_ERROR_CHECK(mpu9250_register_write_byte(SMPLRT_DIV, 0x07));
 
-    //////////////////////////////////////////////////////////////////////////////////////
-    /*err = nvs_flash_init();
-    if (err == ESP_ERR_NVS_NO_FREE_PAGES || err == ESP_ERR_NVS_NEW_VERSION_FOUND) {
-        // NVS partition was truncated and needs to be erased
-        // Retry nvs_flash_init
-        ESP_ERROR_CHECK(nvs_flash_erase());
-        err = nvs_flash_init();
-    }
-    ESP_ERROR_CHECK( err );
-    printf("\n");
-    printf("Opening Non-Volatile Storage (NVS) handle... \n");
-    */
-
-
     err = nvs_open("storage", NVS_READWRITE, &my_handle);
     if (err != ESP_OK) 
     {
         printf("Error (%s) opening NVS handle!\n", esp_err_to_name(err)); 
     }
     //////////////////////////////////////////////////////////////////////////////////////
-    ESP_LOGI(TAG, "Don't remove the sensor. the offset values are being read now");
-    vTaskDelay(200 / portTICK_PERIOD_MS);
+    char message[100]= " ";
+    sprintf(message,"Don't move the sensor. the offset values are being read now");
+    uint32_t length = strlen(message);
+    esp_blufi_send_custom_data((unsigned char*)message,length);
+    vTaskDelay(1500/ portTICK_PERIOD_MS);
     getAccelOffset();
     getGyroOffset();
+    sprintf(message,"Offset values reading finished");
+    length = strlen(message);
+    esp_blufi_send_custom_data((unsigned char*)message,length);
 }
 
 

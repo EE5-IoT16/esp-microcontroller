@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <string.h>
 #include <math.h>
 #include "esp_log.h"
 #include "driver/i2c.h"
@@ -7,7 +8,7 @@
 #include "esp_system.h"
 #include "nvs_flash.h"
 #include "nvs.h"
-
+#include "esp_blufi.h"
 
 void getAccelOffset(void);
 void getGyroOffset(void);
