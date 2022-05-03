@@ -29,7 +29,7 @@ struct sensordata
 
 volatile struct controller controller;
 struct sensordata sensordata;
-int bpm;
+u_int8_t bpm;
 
 void tSensor(void* arg)
 {
@@ -109,37 +109,45 @@ void app_main(void)
 {
     while(1){
     ESP_LOGI(TAG, "main process starts to run\n");
-    xTaskCreatePinnedToCore(tBlufi,"blufi",5000,NULL,2,NULL,tskNO_AFFINITY);
+    char message[100]= " ";
+    xTaskCreatePinnedToCore(tBlufi,"blufi",4096,NULL,2,NULL,tskNO_AFFINITY);
     while (!ble_connected())
     {
          vTaskDelay(500/ portTICK_PERIOD_MS);
     }
+    vTaskDelay(2000/ portTICK_PERIOD_MS);
     //////////////////////////////////////////////////////////////////////////////////////
     err = nvs_flash_init();
     if (err == ESP_ERR_NVS_NO_FREE_PAGES || err == ESP_ERR_NVS_NEW_VERSION_FOUND) {
         // NVS partition was truncated and needs to be erased
         // Retry nvs_flash_init
-        ESP_ERROR_CHECK(nvs_flash_erase());
+        err = nvs_flash_erase();
         err = nvs_flash_init();
+         if (err != ESP_OK) 
+         {
+            sprintf(message,"Error (%s) erase NVS handle!\n", esp_err_to_name(err));
+            uint32_t length = strlen(message);
+            esp_blufi_send_custom_data((unsigned char*)message,length);
+         }
     }
-    ESP_ERROR_CHECK( err );
     printf("\n");
     printf("Opening Non-Volatile Storage (NVS) handle... \n");
     err = nvs_open("storage", NVS_READWRITE, &data_handle);
     if (err != ESP_OK) 
     {
-        printf("Error (%s) opening NVS handle!\n", esp_err_to_name(err)); 
+        sprintf(message,"Error (%s) opening NVS handle!\n", esp_err_to_name(err));
+        uint32_t length = strlen(message);
+        esp_blufi_send_custom_data((unsigned char*)message,length);
     }
     err = nvs_open("storage", NVS_READONLY, &data_handle);
     //////////////////////////////////////////////////////////////////////////////////////
-
     controller.sensorC  = 1;
     controller.counterC = 1;
     controller.http_i2c = 1;
     controller.http_bpm = 1;
     xTaskCreatePinnedToCore(tSensor,"sensor",2048,NULL,1,NULL,tskNO_AFFINITY);
     xTaskCreatePinnedToCore(tPulse,"pulse",2048,NULL,1,NULL,tskNO_AFFINITY);
-    vTaskDelay(500/ portTICK_PERIOD_MS);
+    vTaskDelay(10000/ portTICK_PERIOD_MS);
     xTaskCreatePinnedToCore(tHttpSensor,"httpSensor",10240,NULL,1,NULL,tskNO_AFFINITY);
     xTaskCreatePinnedToCore(tHttpBpm,"httpBpm",10240,NULL,1,NULL,tskNO_AFFINITY);
     
