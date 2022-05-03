@@ -45,8 +45,6 @@ static const char *TAG = "i2c-sensor";
 
 esp_err_t err;
 nvs_handle_t my_handle;
-int ReadingError;
-int WirtingError;
 
 struct accelOffset
 {
@@ -118,24 +116,42 @@ static esp_err_t i2c_master_init(void)
 
 void getAccelOffset()
 {
+    int ReadingError = 0;
     uint8_t data[2];
-    ESP_ERROR_CHECK(mpu9250_register_read(ACCEL_XOUT_H, data, 2));
+    if(mpu9250_register_read(ACCEL_XOUT_H, data, 2) != ESP_OK) ReadingError++;
     aOffset.axOffset = (int16_t)((data[0] << 8) | data[1]);
-    ESP_ERROR_CHECK(mpu9250_register_read(ACCEL_YOUT_H, data, 2));
+    if(mpu9250_register_read(ACCEL_YOUT_H, data, 2) )          ReadingError++;
     aOffset.ayOffset = (int16_t)((data[0] << 8) | data[1]);
-    ESP_ERROR_CHECK(mpu9250_register_read(ACCEL_ZOUT_H, data, 2));
+    if(mpu9250_register_read(ACCEL_ZOUT_H, data, 2)!= ESP_OK)  ReadingError++;
     aOffset.azOffset = (int16_t)((data[0] << 8) | data[1])-8196;
+    if(ReadingError != 0 )
+    {
+        char message[100]= " ";
+        sprintf(message,"%d error found while reading offset of accelerometer",ReadingError);
+        uint32_t length = strlen(message);
+        esp_blufi_send_custom_data((unsigned char*)message,length);
+
+    }
 }
 
 void getGyroOffset()
 {
+    int ReadingError = 0;
     uint8_t data[2];
-    ESP_ERROR_CHECK(mpu9250_register_read(GYRO_XOUT_H, data, 2));
+    if(mpu9250_register_read(GYRO_XOUT_H, data, 2)!= ESP_OK ) ReadingError++;
     gOffset.gxOffset = (int16_t)((data[0] << 8) | data[1]);
-    ESP_ERROR_CHECK(mpu9250_register_read(GYRO_YOUT_H, data, 2));
+    if(mpu9250_register_read(GYRO_YOUT_H, data, 2)!= ESP_OK)  ReadingError++;
     gOffset.gyOffset = (int16_t)((data[0] << 8) | data[1]);
-    ESP_ERROR_CHECK(mpu9250_register_read(GYRO_ZOUT_H, data, 2));
+    if(mpu9250_register_read(GYRO_ZOUT_H, data, 2)!= ESP_OK)  ReadingError++;
     gOffset.gzOffset = (int16_t)((data[0] << 8) | data[1]);
+    if(ReadingError != 0 )
+    {
+        char message[100]= " ";
+        sprintf(message,"%d error found while reading offset of gyroscope",ReadingError);
+        uint32_t length = strlen(message);
+        esp_blufi_send_custom_data((unsigned char*)message,length);
+
+    }
 }
 
 void stepCounter(short ay)
@@ -160,31 +176,70 @@ void stepCounter(short ay)
 
 void i2cSensor_init(void)
 {
-    ReadingError = 0;
-    WirtingError = 0;
-    ESP_ERROR_CHECK(i2c_master_init());
+    char message[100]= " ";
+    if(i2c_master_init() !=  ESP_OK)
+    {
+        sprintf(message,"I2C initializing fail");
+        uint32_t length = strlen(message);
+        esp_blufi_send_custom_data((unsigned char*)message,length);
+    }
     ESP_LOGI(TAG, "I2C initialized successfully");
 
     /*Reset the MPU9250 */
-    ESP_ERROR_CHECK(mpu9250_register_write_byte(MPU9250_PWR_MGMT_1_REG_ADDR, 1 << MPU9250_RESET_BIT));
+    if(mpu9250_register_write_byte(MPU9250_PWR_MGMT_1_REG_ADDR, 1 << MPU9250_RESET_BIT) !=  ESP_OK)
+    {
+        sprintf(message,"Error occurs when resetting sensor MPU9250");
+        uint32_t length = strlen(message);
+        esp_blufi_send_custom_data((unsigned char*)message,length);
+    }
 
     /*Set the clock reference to X axis gyroscope to get a better accuracy*/
-    ESP_ERROR_CHECK(mpu9250_register_write_byte(MPU9250_PWR_MGMT_1_REG_ADDR, 0x01));
+    if(mpu9250_register_write_byte(MPU9250_PWR_MGMT_1_REG_ADDR, 0x01)!=  ESP_OK)
+    {
+        sprintf(message,"Error occurs when setting clock reference");
+        uint32_t length = strlen(message);
+        esp_blufi_send_custom_data((unsigned char*)message,length);
+    }
 
     /*Set the accel scale to 4g*/
-    ESP_ERROR_CHECK(mpu9250_register_write_byte(ACCEL_CONFIG_1_AD, 0x08));
+    if(mpu9250_register_write_byte(ACCEL_CONFIG_1_AD, 0x08)!=  ESP_OK)
+    {
+        sprintf(message,"Error occurs when setting accelerometer scale fail");
+        uint32_t length = strlen(message);
+        esp_blufi_send_custom_data((unsigned char*)message,length);
+    }
 
     /*Set the gyro scale to 500 °/s and FCHOICE_B*/
-    ESP_ERROR_CHECK(mpu9250_register_write_byte(GYRO_CONFIG_AD, 0x08));
+    if(mpu9250_register_write_byte(GYRO_CONFIG_AD, 0x08)!=  ESP_OK)
+    {
+        sprintf(message,"Error occurs when setting gyro scale");
+        uint32_t length = strlen(message);
+        esp_blufi_send_custom_data((unsigned char*)message,length);
+    }
 
     /*Turn on the internal low-pass filter for accelerometer with 10.2Hz bandwidth*/
-    ESP_ERROR_CHECK(mpu9250_register_write_byte(ACCEL_CONFIG_2_AD, 0x05));
+    if(mpu9250_register_write_byte(ACCEL_CONFIG_2_AD, 0x05)!=  ESP_OK)
+    {
+        sprintf(message,"Error occurs when turning on the internal low-pass filter for accelerometer");
+        uint32_t length = strlen(message);
+        esp_blufi_send_custom_data((unsigned char*)message,length);
+    }
 
     /*Turn on the internal low-pass filter for gyroscope with 10Hz bandwidth*/
-    ESP_ERROR_CHECK(mpu9250_register_write_byte(CONFIG_AD, 0x05));
+    if(mpu9250_register_write_byte(CONFIG_AD, 0x05)!=  ESP_OK)
+    {
+        sprintf(message,"Error occurs when turning on the internal low-pass filter for gyroscope");
+        uint32_t length = strlen(message);
+        esp_blufi_send_custom_data((unsigned char*)message,length);
+    }
    
     /*Set gyro sample rate to 125Hz*/
-    ESP_ERROR_CHECK(mpu9250_register_write_byte(SMPLRT_DIV, 0x07));
+    if(mpu9250_register_write_byte(SMPLRT_DIV, 0x07)!=  ESP_OK)
+    {
+        sprintf(message,"Error occurs when setting sampling rate");
+        uint32_t length = strlen(message);
+        esp_blufi_send_custom_data((unsigned char*)message,length);
+    }
 
     err = nvs_open("storage", NVS_READWRITE, &my_handle);
     if (err != ESP_OK) 
@@ -192,11 +247,10 @@ void i2cSensor_init(void)
         printf("Error (%s) opening NVS handle!\n", esp_err_to_name(err)); 
     }
     //////////////////////////////////////////////////////////////////////////////////////
-    char message[100]= " ";
     sprintf(message,"Don't move the sensor. the offset values are being read now");
     uint32_t length = strlen(message);
     esp_blufi_send_custom_data((unsigned char*)message,length);
-    vTaskDelay(1500/ portTICK_PERIOD_MS);
+    vTaskDelay(3000/ portTICK_PERIOD_MS);
     getAccelOffset();
     getGyroOffset();
     sprintf(message,"Offset values reading finished");
@@ -207,34 +261,33 @@ void i2cSensor_init(void)
 
 void readDataFromSensor(int frequency)
 {    
+    char message[100]= " ";
+    int ReadingError = 0;
     vTaskDelay(frequency/ portTICK_PERIOD_MS);
     uint8_t data[2];
-    ESP_ERROR_CHECK(mpu9250_register_read(ACCEL_XOUT_H, data, 2));
-    //ESP_LOGI(TAG, "ACCEL_X = %X", data[0]);
+    if(mpu9250_register_read(ACCEL_XOUT_H, data, 2)!=  ESP_OK) ReadingError++;
     short ax = (int16_t)((data[0] << 8) | data[1]);
     printf("ax = %2.1fm/s²   ",((ax-aOffset.axOffset)/32768.0)*4*GravAccel);
-    ESP_ERROR_CHECK(mpu9250_register_read(ACCEL_YOUT_H, data, 2));
-    //ESP_LOGI(TAG, "ACCEL_Y = %X", data[0]);
+
+    if(mpu9250_register_read(ACCEL_YOUT_H, data, 2)!=  ESP_OK) ReadingError++;
     short ay = (int16_t)((data[0] << 8) | data[1]);
     printf("ay = %2.1fm/s²   ",((ay-aOffset.ayOffset)/32768.0)*4*GravAccel);
+
     stepCounter(ay);
 
-    ESP_ERROR_CHECK(mpu9250_register_read(ACCEL_ZOUT_H, data, 2));
+    if(mpu9250_register_read(ACCEL_ZOUT_H, data, 2)!=  ESP_OK) ReadingError++;
     short az = (int16_t)((data[0] << 8) | data[1]);
     printf("az = %2.1fm/s²\n",((az-aOffset.azOffset)/32768.0)*4*GravAccel);
 
-    ESP_ERROR_CHECK(mpu9250_register_read(GYRO_XOUT_H, data, 2));
-    //ESP_LOGI(TAG, "ACCEL_X = %X", data[0]);
+    if(mpu9250_register_read(GYRO_XOUT_H, data, 2)!=  ESP_OK)  ReadingError++;
     short gx = (int16_t)((data[0] << 8) | data[1]);
     printf("gx = %3.1f°/s    ",((gx-gOffset.gxOffset)/32768.0)*500);
 
-    ESP_ERROR_CHECK(mpu9250_register_read(GYRO_YOUT_H, data, 2));
-    //ESP_LOGI(TAG, "ACCEL_X = %X", data[0]);                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   m
+    if(mpu9250_register_read(GYRO_YOUT_H, data, 2)!=  ESP_OK) ReadingError++; 
     short gy = (int16_t)((data[0] << 8) | data[1]);
     printf("gy = %3.1f°/s    ",((gy-gOffset.gyOffset)/32768.0)*500);
 
-    ESP_ERROR_CHECK(mpu9250_register_read(GYRO_ZOUT_H, data, 2));
-    //ESP_LOGI(TAG, "ACCEL_X = %X", data[0]);
+    if(mpu9250_register_read(GYRO_ZOUT_H, data, 2)!=  ESP_OK)  ReadingError++;
     short gz = (int16_t)((data[0] << 8) | data[1]);
     printf("gz = %3.1f°/s\n",((gz-gOffset.gzOffset)/32768.0)*500);
     
@@ -242,54 +295,37 @@ void readDataFromSensor(int frequency)
     printf("yAngle = %3.1f°   ",acos(((ay-aOffset.ayOffset)/32768.0)*4)*57.29577);
     printf("zAngle = %3.1f°\n",acos(((az-aOffset.azOffset)/32768.0)*4)*57.29577);
     
-    
-    ESP_ERROR_CHECK(mpu9250_register_read(TEMP_OUT_H, data, 2));
+    if(mpu9250_register_read(TEMP_OUT_H, data, 2)!=  ESP_OK)  ReadingError++;
     short temp = (int16_t)((data[0] << 8) | data[1]) ;
     float temperature = 21.00f + ((((float)temp-333.87f*6))/333.87f);
     printf("temperature = %f°C\n", temperature);
     printf("state:%d, step:%d\n\n",state,step);
 
-        // Write
-        //printf("Updating ax in NVS ... ");
-        err = nvs_set_u32(my_handle, "step_counter", step);
-        //printf((err != ESP_OK) ? "Failed!\n" : "Done\n");
+    if(ReadingError != 0)
+    {
+        sprintf(message,"%d error found while reading data from sensors",ReadingError);
+        uint32_t length = strlen(message);
+        esp_blufi_send_custom_data((unsigned char*)message,length);
+    }
 
-        // Commit written value.
-        // After setting any values, nvs_commit() must be called to ensure changes are written
-        // to flash storage. Implementations may write to storage at other times,
-        // but this is not guaranteed.
-        //printf("Committing updates in NVS ... ");
-        err = nvs_commit(my_handle);
-        //printf((err != ESP_OK) ? "Failed!\n" : "Done\n");
-        /*
-        uint32_t test;
-        err = nvs_get_u32(my_handle, "step_counter", &test);
-        printf("step = %d\n\n", test);*/
-    /*
-        // Read
-        printf("Reading ax from NVS ... ");
-        uint32_t test;
-        err = nvs_get_i16(my_handle, "step_counter", &test);
-        switch (err) {
-            case ESP_OK:
-                printf("Done\n");
-                printf("step = %d\n\n", test);
-                break;
-            case ESP_ERR_NVS_NOT_FOUND:
-                printf("The value is not initialized yet!\n");
-                break;
-            default :
-                printf("Error (%s) reading!\n", esp_err_to_name(err));
-        }
-        
-
-        // Close
-        //nvs_close(my_handle);*/
+    if(nvs_set_u32(my_handle, "step_counter", step)!= ESP_OK)
+    {
+        sprintf(message,"Error occurs when saving data in memory");
+        uint32_t length = strlen(message);
+        esp_blufi_send_custom_data((unsigned char*)message,length);
+    }
+    err = nvs_commit(my_handle);
 }
 
 void unitializedI2C(void)
 {
-    ESP_ERROR_CHECK(i2c_driver_delete(I2C_MASTER_NUM));
+    char message[100]= " ";
+    if(i2c_driver_delete(I2C_MASTER_NUM)!=  ESP_OK)
+    {
+        sprintf(message,"Error occurs when closing I2C connection");
+        uint32_t length = strlen(message);
+        esp_blufi_send_custom_data((unsigned char*)message,length);
+    }
     ESP_LOGI(TAG, "I2C unitialized successfully");
     nvs_close(my_handle);
 }
