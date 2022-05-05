@@ -125,7 +125,7 @@ void counter_init(void)
     /* Initialize PCNT event queue and PCNT functions */
     pcnt_evt_queue = xQueueCreate(10, sizeof(pcnt_evt_t));
     pcnt_example_init(pcnt_unit);
-
+    
     err = nvs_open("storage", NVS_READWRITE, &my_handle);
     if (err != ESP_OK) 
     {
@@ -134,9 +134,10 @@ void counter_init(void)
 }
 
 
-void startToCount(int period)
+HeartRateStatus startToCount(int period)
 {   
     int16_t count = 0;
+    HeartRateStatus status = NORMAL;
     pcnt_evt_t evt;
     portBASE_TYPE res;
     /* Wait for the event information passed from PCNT's interrupt handler.
@@ -176,15 +177,15 @@ void startToCount(int period)
             heartRate += count*12; 
             heartRate /=2;
             ESP_LOGI(TAG, "Current counter value :%d, heart rate :%d bps", count,heartRate);
+            status = NORMAL;
             }
-        
+            
         err = nvs_set_u8(my_handle, "bpm", heartRate);
         err = nvs_commit(my_handle);
+        return status;
 }
 
 void unitializePulseCounter(void)
 {
     nvs_close(my_handle);
 }
-
-

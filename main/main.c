@@ -1,4 +1,4 @@
-static const char *TAG = "main";
+static const char *TAG = "iot_16_main";
 #include "i2c_sensor.h"
 #include "pulse_counter.h"
 #include <stdio.h>  
@@ -10,7 +10,7 @@ static const char *TAG = "main";
 #include "freertos/task.h" 
 
 nvs_handle_t data_handle;
-esp_err_t err;
+HeartRateStatus status;
 
 struct controller
 {
@@ -37,7 +37,13 @@ void tSensor(void* arg)
     do
     {
         readDataFromSensor(1000);
-        err = nvs_get_u32(data_handle, "step_counter", &(sensordata.steps));
+        if(nvs_get_u32(data_handle, "step_counter", &(sensordata.steps)) != ESP_OK)
+        {
+            char message[100]= " ";
+            sprintf(message,"Reading data error %d ",sensordata.steps);
+            uint32_t length = strlen(message);
+            esp_blufi_send_custom_data((unsigned char*)message,length);
+        }
     }
     while(controller.sensorC);
     unitializedI2C();
@@ -50,15 +56,21 @@ void tPulse(void* arg)
     counter_init();
     do
     {
-        startToCount(5000);
-        err = nvs_get_u8(data_handle, "bpm", &bpm);
-
+        status = startToCount(5000);
+        if(nvs_get_u8(data_handle, "bpm", &bpm) != ESP_OK)
+        {
+            char message[100]= " ";
+            sprintf(message,"Reading data error %d ",sensordata.steps);
+            uint32_t length = strlen(message);
+            esp_blufi_send_custom_data((unsigned char*)message,length);
+        }
 
     }while (controller.counterC);
     unitializePulseCounter();
     vTaskDelete(NULL);
 
 }
+
 void tBlufi(void* arg)
 {
     run_blufi();
@@ -97,7 +109,21 @@ void tHttpBpm(void* arg)
         else 
         {
             char message[100]= " ";
-            sprintf(message,"WIFI disconnted, your current heartrate is %d bpm",bpm);
+            switch (status)
+            {
+            case NORMAL:
+                sprintf(message,"WIFI disconnted, your current heartrate is %d bp, normal",bpm);
+                break;
+            case HIGH:
+                sprintf(message,"WIFI disconnted, your current heartrate is %d bp, high",bpm);
+                break;
+             case WARNING:
+                sprintf(message,"WIFI disconnted, your current heartrate is %d bp, warning",bpm);
+                break;    
+            default:
+                break;
+            }
+           
             uint32_t length = strlen(message);
             esp_blufi_send_custom_data((unsigned char*)message,length);
         }
@@ -107,6 +133,7 @@ void tHttpBpm(void* arg)
 
 void app_main(void)
 {
+    esp_err_t err;
     while(1){
     ESP_LOGI(TAG, "main process starts to run\n");
     char message[100]= " ";
@@ -116,6 +143,7 @@ void app_main(void)
          vTaskDelay(500/ portTICK_PERIOD_MS);
     }
     vTaskDelay(2000/ portTICK_PERIOD_MS);
+
     //////////////////////////////////////////////////////////////////////////////////////
     err = nvs_flash_init();
     if (err == ESP_ERR_NVS_NO_FREE_PAGES || err == ESP_ERR_NVS_NEW_VERSION_FOUND) {
@@ -141,16 +169,16 @@ void app_main(void)
     }
     err = nvs_open("storage", NVS_READONLY, &data_handle);
     ////////////////////////////////////////////////////////////////////////////////////////
+
     controller.sensorC  = 1;
     controller.counterC = 1;
     controller.http_i2c = 1;
     controller.http_bpm = 1;
-    xTaskCreatePinnedToCore(tSensor,"sensor",2048,NULL,1,NULL,tskNO_AFFINITY);
-    xTaskCreatePinnedToCore(tPulse,"pulse",2048,NULL,1,NULL,tskNO_AFFINITY);
+    xTaskCreatePinnedToCore(tSensor,"sensor",4096,NULL,1,NULL,tskNO_AFFINITY);
+    xTaskCreatePinnedToCore(tPulse,"pulse",4096,NULL,1,NULL,tskNO_AFFINITY);
     vTaskDelay(10000/ portTICK_PERIOD_MS);
     xTaskCreatePinnedToCore(tHttpSensor,"httpSensor",10240,NULL,1,NULL,tskNO_AFFINITY);
     xTaskCreatePinnedToCore(tHttpBpm,"httpBpm",10240,NULL,1,NULL,tskNO_AFFINITY);
-    
     while(ble_connected())
     {
          vTaskDelay(500/ portTICK_PERIOD_MS);

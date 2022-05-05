@@ -1,4 +1,3 @@
-
 #include "blufi.h"
 #ifdef CONFIG_BT_BLUEDROID_ENABLED
 #include "esp_bt.h"
@@ -16,6 +15,7 @@
 #include "services/gatt/ble_svc_gatt.h"
 #include "console/console.h"
 #endif
+
 
 #ifdef CONFIG_BT_BLUEDROID_ENABLED
 esp_err_t esp_blufi_host_init(void)

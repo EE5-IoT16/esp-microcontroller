@@ -7,8 +7,16 @@
 #include "esp_log.h"
 #include "nvs_flash.h"
 #include "nvs.h"
+#include "esp_blufi.h"
+
+typedef enum
+{
+    NORMAL,
+    HIGH,
+    WARNING
+} HeartRateStatus;
 
 void counter_init(void);
-void startToCount(int period);
+HeartRateStatus startToCount(int period);
 void counter_init(void);
 void unitializePulseCounter(void);
