@@ -1,33 +1,8 @@
-/* ESP HTTP Client Example
-
-   This example code is in the Public Domain (or CC0 licensed, at your option.)
-
-   Unless required by applicable law or agreed to in writing, this
-   software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
-   CONDITIONS OF ANY KIND, either express or implied.
-*/
-
 #include "http_client.h"
 
 #define MAX_HTTP_RECV_BUFFER 512
 #define MAX_HTTP_OUTPUT_BUFFER 2048
 static const char *TAG = "HTTP_CLIENT";
-
-/* Root cert for howsmyssl.com, taken from howsmyssl_com_root_cert.pem
-
-   The PEM file was extracted from the output of this command:
-   openssl s_client -showcerts -connect www.howsmyssl.com:443 </dev/null
-
-   The CA root cert is the last cert given in the chain of certs.
-
-   To embed it in the app binary, the PEM file is named
-   in the component.mk COMPONENT_EMBED_TXTFILES variable.
-*/
-// extern const char howsmyssl_com_root_cert_pem_start[] asm("_binary_howsmyssl_com_root_cert_pem_start");
-// extern const char howsmyssl_com_root_cert_pem_end[] asm("_binary_howsmyssl_com_root_cert_pem_end");
-
-// extern const char postman_root_cert_pem_start[] asm("_binary_postman_root_cert_pem_start");
-// extern const char postman_root_cert_pem_end[] asm("_binary_postman_root_cert_pem_end");
 
 esp_err_t _http_event_handler(esp_http_client_event_t *evt)
 {
@@ -146,15 +121,15 @@ void sample_api_req_hardcoded(int deviceID, int bpm,  API_NODES_t type)
  * @brief Create a Url object
  * 
  * @param api_node 
- * @param params Total Param Count. At least 2 parameter.
+ * @param params Total Param Count.
  * @param ...  
- * |------------------|------------|-------------|----------------|
- * | API NODE         | Param 1    | Param 2     | Param 3        |
- * |------------------|------------|-------------|----------------|
- * | HEARTRATE        | deviceID   | bpm         | null           |
- * | ACCEL            | deviceID   | acceleration| null           |
- * | GYRO             | deviceID   | angle       | angularVelocity|
- * | TEMPERATURE      | deviceID   | temperature | null           |
+ * |------------------|----------|-------------|
+ * | API NODE         | Param 1  | Param 2     |
+ * |------------------|----------|-------------|
+ * | HEARTRATE        | userID   | bpm         |
+ * | FALLS            | userID   | null        |
+ * | STEPS            | userID   | steps       |
+ * | TEMPERATURE      | userID   | temperature |
  * @return char[] 
  */
 static char *createPostUrl(API_NODES_t api_node, int params, ...)
@@ -191,36 +166,28 @@ static char *createPostUrl(API_NODES_t api_node, int params, ...)
             }
 
             break;
-        case ACCEL:
-            strcat(url_pointer, "accel");
+        case FALLS:
+            strcat(url_pointer, "falls");
 
             if (((int)(sizeof(params_arr) / sizeof(int))) > 1)
             {
-                strcat(url_pointer, "?deviceId=");
+                strcat(url_pointer, "?userId=");
                 sprintf(buffer, "%d", params_arr[0]);
-                strcat(url_pointer, buffer);
-
-                strcat(url_pointer, "&acceleration=");
-                sprintf(buffer, "%d", params_arr[1]);
                 strcat(url_pointer, buffer);
             }
 
             break;
-        case GYRO:
-            strcat(url_pointer, "gyro");
+        case STEPS:
+            strcat(url_pointer, "steps");
 
             if (((int)(sizeof(params_arr) / sizeof(int))) > 1)
             {
-                strcat(url_pointer, "?deviceId=");
+                strcat(url_pointer, "?userId=");
                 sprintf(buffer, "%d", params_arr[0]);
                 strcat(url_pointer, buffer);
 
-                strcat(url_pointer, "&angle=");
+                strcat(url_pointer, "&steps=");
                 sprintf(buffer, "%d", params_arr[1]);
-                strcat(url_pointer, buffer);
-
-                strcat(url_pointer, "&angularVelocity=");
-                sprintf(buffer, "%d", params_arr[2]);
                 strcat(url_pointer, buffer);
             }
             break;
@@ -229,7 +196,7 @@ static char *createPostUrl(API_NODES_t api_node, int params, ...)
 
             if (((int)(sizeof(params_arr) / sizeof(int))) > 1)
             {
-                strcat(url_pointer, "?deviceId=");
+                strcat(url_pointer, "?userId=");
                 sprintf(buffer, "%d", params_arr[0]);
                 strcat(url_pointer, buffer);
 
@@ -258,6 +225,8 @@ static void http_test_task(void *pvParameters)
     vTaskDelete(NULL);
 }
 
+
+// Probably it is not required. Delete it after cheking with Yifeng.
 void run(void)
 {
     esp_err_t ret = nvs_flash_init();
@@ -279,38 +248,3 @@ void run(void)
 
     xTaskCreate(&http_test_task, "http_test_task", 8192, NULL, 5, NULL);
 }
-
-// static void sample_api_request_dynamic(void)
-// {
-//     char local_response_buffer[MAX_HTTP_OUTPUT_BUFFER] = {0};
-
-//     esp_http_client_config_t config = {
-//         .url = "http://ee5-huzza.herokuapp.com/heartRate?",
-//         .event_handler = _http_event_handler,
-//         .user_data = local_response_buffer
-//     };
-//     ESP_LOGI(TAG, "%s", config.url);
-//     esp_http_client_handle_t client = esp_http_client_init(&config);
-
-//     // POST
-//     // const char *post_data = "{bpm=\"100\"&\"deviceId\"=50}";
-//     const char *post_data = "bpm=100&deviceId=50";
-//     esp_http_client_set_url(client, "http://ee5-huzza.herokuapp.com/heartRate?");
-//     esp_http_client_set_header(client, "Content-Type", "application/x-www-form-urlencoded");
-//     esp_http_client_set_method(client, HTTP_METHOD_POST);
-//     esp_http_client_set_post_field(client, post_data, strlen(post_data));
-
-//     esp_err_t err = esp_http_client_perform(client);
-//     if (err == ESP_OK)
-//     {
-//         ESP_LOGI(TAG, "HTTP POST Status = %d, content_length = %d",
-//                  esp_http_client_get_status_code(client),
-//                  esp_http_client_get_content_length(client));
-//     }
-//     else
-//     {
-//         ESP_LOGE(TAG, "HTTP POST request failed: %s", esp_err_to_name(err));
-//     }
-
-//     esp_http_client_cleanup(client);
-// }w
