@@ -151,7 +151,7 @@ HeartRateStatus startToCount(int period)
     if (firstCount == 0)
     {
         firstCount =1;
-        count++;
+        //count++;
         count = count*2;
 
     }
@@ -179,7 +179,7 @@ HeartRateStatus startToCount(int period)
             ESP_LOGI(TAG, "Current counter value :%d, heart rate :%d bps", count,heartRate);
             status = NORMAL;
             }
-            
+
         err = nvs_set_u8(my_handle, "bpm", heartRate);
         err = nvs_commit(my_handle);
         return status;

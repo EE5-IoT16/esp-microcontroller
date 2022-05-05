@@ -112,13 +112,13 @@ void tHttpBpm(void* arg)
             switch (status)
             {
             case NORMAL:
-                sprintf(message,"WIFI disconnted, your current heartrate is %d bp, normal",bpm);
+                sprintf(message,"WIFI disconnted, your current heartrate is %d bps, normal",bpm);
                 break;
             case HIGH:
-                sprintf(message,"WIFI disconnted, your current heartrate is %d bp, high",bpm);
+                sprintf(message,"WIFI disconnted, your current heartrate is %d bps, high",bpm);
                 break;
              case WARNING:
-                sprintf(message,"WIFI disconnted, your current heartrate is %d bp, warning",bpm);
+                sprintf(message,"WIFI disconnted, your current heartrate is %d bps, warning",bpm);
                 break;    
             default:
                 break;
