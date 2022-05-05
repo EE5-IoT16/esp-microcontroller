@@ -140,7 +140,7 @@ void app_main(void)
         esp_blufi_send_custom_data((unsigned char*)message,length);
     }
     err = nvs_open("storage", NVS_READONLY, &data_handle);
-    //////////////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////////////////
     controller.sensorC  = 1;
     controller.counterC = 1;
     controller.http_i2c = 1;

@@ -72,17 +72,13 @@ enum state
 uint32_t step =0;
 enum state state=low;
 
-/**
- * @brief Read a sequence of bytes from a MPU9250 sensor registers
- */
+
 static esp_err_t mpu9250_register_read(uint8_t reg_addr, uint8_t *data, size_t len)
 {
     return i2c_master_write_read_device(I2C_MASTER_NUM, MPU9250_SENSOR_ADDR, &reg_addr, 1, data, len, I2C_MASTER_TIMEOUT_MS / portTICK_RATE_MS);
 }
 
-/**
- * @brief Write a byte to a MPU9250 sensor register
- */
+
 static esp_err_t mpu9250_register_write_byte(uint8_t reg_addr, uint8_t data)
 {
     int ret;
@@ -93,9 +89,7 @@ static esp_err_t mpu9250_register_write_byte(uint8_t reg_addr, uint8_t data)
     return ret;
 }
 
-/**
- * @brief i2c master initialization
- */
+
 static esp_err_t i2c_master_init(void)
 {
     int i2c_master_port = I2C_MASTER_NUM;
