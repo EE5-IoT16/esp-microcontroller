@@ -88,11 +88,11 @@ esp_err_t _http_event_handler(esp_http_client_event_t *evt)
 
 static char *createPostUrl(API_NODES_t, int, ...);
 
-void sample_api_req_hardcoded(int deviceID, int bpm,  API_NODES_t type)
+void sample_api_req_hardcoded(int deviceID, int data,  API_NODES_t type)
 {
     char local_response_buffer[MAX_HTTP_OUTPUT_BUFFER] = {0};    
     API_NODES_t currentNode = type;
-    char *result_url = createPostUrl(currentNode, 2, 50, 500); // others
+    char *result_url = createPostUrl(currentNode, 2, deviceID, data); // others
 
     esp_http_client_config_t config = {
         .url = result_url,
@@ -115,6 +115,7 @@ void sample_api_req_hardcoded(int deviceID, int bpm,  API_NODES_t type)
     }
     ESP_LOG_BUFFER_HEX(TAG, local_response_buffer, strlen(local_response_buffer));
     free(result_url);
+    esp_http_client_cleanup(client);
 }
 
 /**

@@ -10,7 +10,7 @@ static const char *TAG = "pulse_counter";
 #define LEDC_OUTPUT_IO      18 // Output GPIO of a sample 1 Hz pulse generator
 
 int firstCount = 0;
-uint8_t heartRate  = 0;
+uint16_t heartRate  = 0;
 esp_err_t err;
 nvs_handle_t my_handle;
 
@@ -94,18 +94,18 @@ static void pcnt_example_init(int unit)
     pcnt_unit_config(&pcnt_config);
 
     /* Configure and enable the input filter */
-    pcnt_set_filter_value(unit,1000);
+    pcnt_set_filter_value(unit,10);
     pcnt_filter_enable(unit);
 
     /* Set threshold 0 and 1 values and enable events to watch */
     pcnt_set_event_value(unit, PCNT_EVT_THRES_1, PCNT_THRESH1_VAL);
-    pcnt_event_enable(unit, PCNT_EVT_THRES_1);
+   // pcnt_event_enable(unit, PCNT_EVT_THRES_1);
     pcnt_set_event_value(unit, PCNT_EVT_THRES_0, PCNT_THRESH0_VAL);
-    pcnt_event_enable(unit, PCNT_EVT_THRES_0);
+    //pcnt_event_enable(unit, PCNT_EVT_THRES_0);
     /* Enable events on zero, maximum and minimum limit values */
-    pcnt_event_enable(unit, PCNT_EVT_ZERO);
-    pcnt_event_enable(unit, PCNT_EVT_H_LIM);
-    pcnt_event_enable(unit, PCNT_EVT_L_LIM);
+    //pcnt_event_enable(unit, PCNT_EVT_ZERO);
+    //pcnt_event_enable(unit, PCNT_EVT_H_LIM);
+    //pcnt_event_enable(unit, PCNT_EVT_L_LIM);
     /* Initialize PCNT's counter */
     pcnt_counter_pause(unit);
     pcnt_counter_clear(unit);
@@ -173,14 +173,14 @@ HeartRateStatus startToCount(int period)
             ESP_LOGI(TAG, "ZERO EVT");
         }
         } 
-        else {
-            heartRate += count*12; 
+        else { 
+            heartRate += (uint16_t)count*12;
             heartRate /=2;
             ESP_LOGI(TAG, "Current counter value :%d, heart rate :%d bps", count,heartRate);
             status = NORMAL;
             }
 
-        err = nvs_set_u8(my_handle, "bpm", heartRate);
+        err = nvs_set_u16(my_handle, "bpm", heartRate);
         err = nvs_commit(my_handle);
         return status;
 }

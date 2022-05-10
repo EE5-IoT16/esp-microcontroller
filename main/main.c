@@ -57,7 +57,7 @@ void tPulse(void* arg)
     do
     {
         status = startToCount(5000);
-        if(nvs_get_u8(data_handle, "bpm", &bpm) != ESP_OK)
+        if(nvs_get_u16(data_handle, "bpm", &bpm) != ESP_OK)
         {
             char message[100]= " ";
             sprintf(message,"Reading data error %d ",sensordata.steps);
@@ -84,7 +84,7 @@ void  tHttpSensor(void* arg)
         vTaskDelay(5000/ portTICK_PERIOD_MS);
         if (wifi_connected())
         {
-           sample_api_req_hardcoded(1,sensordata.steps,STEP);
+           sample_api_req_hardcoded(1,sensordata.steps,STEPS);
         }
         else
         {
