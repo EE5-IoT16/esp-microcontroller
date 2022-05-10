@@ -23,13 +23,13 @@ struct controller
 struct sensordata
 {
     uint32_t steps;
-    float temperature;
-    int detectFall;
+    int16_t temperature;
+    int16_t fall;
 };
 
 volatile struct controller controller;
 struct sensordata sensordata;
-u_int8_t bpm;
+u_int16_t bpm;
 
 void tSensor(void* arg)
 {
@@ -38,6 +38,20 @@ void tSensor(void* arg)
     {
         readDataFromSensor(1000);
         if(nvs_get_u32(data_handle, "step_counter", &(sensordata.steps)) != ESP_OK)
+        {
+            char message[100]= " ";
+            sprintf(message,"Reading data error %d ",sensordata.steps);
+            uint32_t length = strlen(message);
+            esp_blufi_send_custom_data((unsigned char*)message,length);
+        }
+        if(nvs_get_i16(data_handle, "temperature", &(sensordata.temperature)) != ESP_OK)
+        {
+            char message[100]= " ";
+            sprintf(message,"Reading data error %d ",sensordata.steps);
+            uint32_t length = strlen(message);
+            esp_blufi_send_custom_data((unsigned char*)message,length);
+        }
+        if(nvs_get_i16(data_handle, "fall", &(sensordata.fall)) != ESP_OK)
         {
             char message[100]= " ";
             sprintf(message,"Reading data error %d ",sensordata.steps);
@@ -84,7 +98,9 @@ void  tHttpSensor(void* arg)
         vTaskDelay(5000/ portTICK_PERIOD_MS);
         if (wifi_connected())
         {
-           sample_api_req_hardcoded(1,sensordata.steps,STEPS);
+            sample_api_req_hardcoded(1,sensordata.steps,STEPS);
+            sample_api_req_hardcoded(1,sensordata.temperature,TEMPERATURE);
+            sample_api_req_hardcoded(1,sensordata.fall,FALLS);
         }
         else
         {

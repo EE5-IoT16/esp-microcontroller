@@ -94,7 +94,7 @@ static void pcnt_example_init(int unit)
     pcnt_unit_config(&pcnt_config);
 
     /* Configure and enable the input filter */
-    pcnt_set_filter_value(unit,10);
+    pcnt_set_filter_value(unit,50);
     pcnt_filter_enable(unit);
 
     /* Set threshold 0 and 1 values and enable events to watch */

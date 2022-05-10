@@ -254,7 +254,8 @@ void i2cSensor_init(void)
 
 
 void readDataFromSensor(int frequency)
-{    
+{  
+    int fall = 0;  
     char message[100]= " ";
     int ReadingError = 0;
     vTaskDelay(frequency/ portTICK_PERIOD_MS);
@@ -308,6 +309,28 @@ void readDataFromSensor(int frequency)
         uint32_t length = strlen(message);
         esp_blufi_send_custom_data((unsigned char*)message,length);
     }
+
+    if(nvs_set_i16(my_handle, "temperaure", temp)!= ESP_OK)
+    {
+        sprintf(message,"Error occurs when saving data in memory");
+        uint32_t length = strlen(message);
+        esp_blufi_send_custom_data((unsigned char*)message,length);
+    }
+    
+    if(nvs_set_i16(my_handle, "temperature", temp)!= ESP_OK)
+    {
+        sprintf(message,"Error occurs when saving data in memory");
+        uint32_t length = strlen(message);
+        esp_blufi_send_custom_data((unsigned char*)message,length);
+    }
+
+    if(nvs_set_i16(my_handle, "fall", fall)!= ESP_OK)
+    {
+        sprintf(message,"Error occurs when saving data in memory");
+        uint32_t length = strlen(message);
+        esp_blufi_send_custom_data((unsigned char*)message,length);
+    }
+
     err = nvs_commit(my_handle);
 }
 
