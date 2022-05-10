@@ -17,10 +17,9 @@
 typedef enum
 {
     HEARTRATE,
-    ACCEL,
-    GYRO,
-    TEMPERATURE,
-    STEP
+    FALLS,
+    STEPS,
+    TEMPERATURE
 } API_NODES_t;
 
 esp_err_t _http_event_handler(esp_http_client_event_t *evt);
