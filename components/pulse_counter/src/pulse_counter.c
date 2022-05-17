@@ -81,8 +81,8 @@ static void pcnt_example_init(int unit)
         .channel = PCNT_CHANNEL_0,
         .unit = unit,
         // What to do on the positive / negative edge of pulse input?
-        .pos_mode = PCNT_COUNT_INC,   // Count up on the positive edge
-        .neg_mode = PCNT_COUNT_DIS,   // Keep the counter value on the negative edge
+        .pos_mode = PCNT_COUNT_DIS,   // Count up on the positive edge
+        .neg_mode = PCNT_COUNT_INC,   // Keep the counter value on the negative edge
         // What to do when control input is low or high?
         .lctrl_mode = PCNT_MODE_REVERSE, // Reverse counting direction if low
         .hctrl_mode = PCNT_MODE_KEEP,    // Keep the primary counter mode if high
@@ -94,7 +94,7 @@ static void pcnt_example_init(int unit)
     pcnt_unit_config(&pcnt_config);
 
     /* Configure and enable the input filter */
-    pcnt_set_filter_value(unit,50);
+    pcnt_set_filter_value(unit,1000);
     pcnt_filter_enable(unit);
 
     /* Set threshold 0 and 1 values and enable events to watch */
@@ -155,34 +155,15 @@ HeartRateStatus startToCount(int period)
         count = count*2;
 
     }
-    if (res == pdTRUE) {
-        ESP_LOGI(TAG, "Event PCNT unit[%d]; cnt: %d", evt.unit, count);
-        if (evt.status & PCNT_EVT_THRES_1) {
-            ESP_LOGI(TAG, "THRES1 EVT");
-        }
-        if (evt.status & PCNT_EVT_THRES_0) {
-            ESP_LOGI(TAG, "THRES0 EVT");
-        }
-        if (evt.status & PCNT_EVT_L_LIM) {
-            ESP_LOGI(TAG, "L_LIM EVT");   
-            }
-        if (evt.status & PCNT_EVT_H_LIM) {
-            ESP_LOGI(TAG, "H_LIM EVT");
-        }
-        if (evt.status & PCNT_EVT_ZERO) {
-            ESP_LOGI(TAG, "ZERO EVT");
-        }
-        } 
-        else { 
-            heartRate += (uint16_t)count*12;
-            heartRate /=2;
-            ESP_LOGI(TAG, "Current counter value :%d, heart rate :%d bps", count,heartRate);
-            status = NORMAL;
-            }
-
-        err = nvs_set_u16(my_handle, "bpm", heartRate);
-        err = nvs_commit(my_handle);
-        return status;
+    heartRate += (uint16_t)count*12;
+    heartRate /=2;
+    ESP_LOGI(TAG, "Current counter value :%d, heart rate :%d bps", count,heartRate);
+    if(heartRate <= 120 ) status = NORMAL;
+    else if (heartRate <= 180 && heartRate > 120) status = HIGH;
+    else  status = WARNING;
+    err = nvs_set_u16(my_handle, "bpm", heartRate);
+    err = nvs_commit(my_handle);
+    return status;
 }
 
 void unitializePulseCounter(void)

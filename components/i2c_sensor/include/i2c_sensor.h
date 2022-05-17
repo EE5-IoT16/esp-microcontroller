@@ -8,11 +8,13 @@
 #include "esp_system.h"
 #include "nvs_flash.h"
 #include "nvs.h"
-#include "esp_blufi.h"
 
+#include "esp_blufi.h"
 void getAccelOffset(void);
 void getGyroOffset(void);
 void stepCounter(short ay);
 void i2cSensor_init(void);
-void readDataFromSensor(int frequency);
+void step_counter(void);
 void unitializedI2C(void);
+void measure_temperature(void);
+int detect_fall(void);

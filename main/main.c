@@ -23,46 +23,72 @@ struct controller
 struct sensordata
 {
     uint32_t steps;
-    int16_t temperature;
+    short temperature;
     int16_t fall;
 };
 
 volatile struct controller controller;
-struct sensordata sensordata;
-u_int16_t bpm;
+static struct sensordata sensordata;
+static u_int16_t bpm;
 
-void tSensor(void* arg)
+
+void tStep(void* arg)
 {
     i2cSensor_init();
     do
     {
-        readDataFromSensor(1000);
-        if(nvs_get_u32(data_handle, "step_counter", &(sensordata.steps)) != ESP_OK)
-        {
-            char message[100]= " ";
-            sprintf(message,"Reading data error %d ",sensordata.steps);
-            uint32_t length = strlen(message);
-            esp_blufi_send_custom_data((unsigned char*)message,length);
-        }
-        if(nvs_get_i16(data_handle, "temperature", &(sensordata.temperature)) != ESP_OK)
-        {
-            char message[100]= " ";
-            sprintf(message,"Reading data error %d ",sensordata.steps);
-            uint32_t length = strlen(message);
-            esp_blufi_send_custom_data((unsigned char*)message,length);
-        }
+        vTaskDelay(50/portTICK_PERIOD_MS);
+        step_counter();
+        /*
         if(nvs_get_i16(data_handle, "fall", &(sensordata.fall)) != ESP_OK)
         {
             char message[100]= " ";
-            sprintf(message,"Reading data error %d ",sensordata.steps);
+            sprintf(message,"Reading falling data error %d ",sensordata.steps);
             uint32_t length = strlen(message);
             esp_blufi_send_custom_data((unsigned char*)message,length);
-        }
+        }*/
     }
     while(controller.sensorC);
     unitializedI2C();
     vTaskDelete(NULL);
    
+}
+
+void tTemperature(void* arg)
+{
+    do
+    {
+        vTaskDelay(2000/portTICK_PERIOD_MS);
+        measure_temperature();
+    }
+    while(controller.sensorC); 
+    vTaskDelete(NULL);
+}
+
+void tFallDetect(void* arg)
+{   
+    do
+    {
+        vTaskDelay(50/portTICK_PERIOD_MS);
+        sensordata.fall = detect_fall();
+        if (sensordata.fall != 0)
+        {
+            if (wifi_connected())
+            {
+                sample_api_req_hardcoded(1,sensordata.fall,FALLS);
+            }
+            else 
+            {
+                char message[100]= " ";
+                sprintf(message,"Detect a fall, possibility: %d percent",sensordata.fall*20);
+                uint32_t length = strlen(message);
+                esp_blufi_send_custom_data((unsigned char*)message,length);
+            }
+            vTaskDelay(5000/portTICK_PERIOD_MS);
+        }  
+    }
+    while(controller.sensorC); 
+    vTaskDelete(NULL);
 }
 
 void tPulse(void* arg)
@@ -74,10 +100,11 @@ void tPulse(void* arg)
         if(nvs_get_u16(data_handle, "bpm", &bpm) != ESP_OK)
         {
             char message[100]= " ";
-            sprintf(message,"Reading data error %d ",sensordata.steps);
+            sprintf(message,"Reading heartrate data error %d ",sensordata.steps);
             uint32_t length = strlen(message);
             esp_blufi_send_custom_data((unsigned char*)message,length);
         }
+        
 
     }while (controller.counterC);
     unitializePulseCounter();
@@ -96,6 +123,20 @@ void  tHttpSensor(void* arg)
     do
     {
         vTaskDelay(5000/ portTICK_PERIOD_MS);
+        if(nvs_get_u32(data_handle, "step_counter", &(sensordata.steps)) != ESP_OK)
+        {
+            char message[100]= " ";
+            sprintf(message,"Reading steps data error ");
+            uint32_t length = strlen(message);
+            esp_blufi_send_custom_data((unsigned char*)message,length);
+        }
+        if(nvs_get_i16(data_handle, "temperature", &(sensordata.temperature)) != ESP_OK)
+        {
+            char message[100]= " ";
+            sprintf(message,"Reading temperature data error");
+            uint32_t length = strlen(message);
+            esp_blufi_send_custom_data((unsigned char*)message,length);
+        }
         if (wifi_connected())
         {
             sample_api_req_hardcoded(1,sensordata.steps,STEPS);
@@ -108,11 +149,17 @@ void  tHttpSensor(void* arg)
             sprintf(message,"WIFI disconnted, your current step is %d ",sensordata.steps);
             uint32_t length = strlen(message);
             esp_blufi_send_custom_data((unsigned char*)message,length);
+
+            float  temperature = 21.00f + ((((float)(sensordata.temperature)-333.87f*6))/333.87f);
+            sprintf(message,"WIFI disconnted, your current temperature is %.2f ",temperature);
+            length = strlen(message);
+            esp_blufi_send_custom_data((unsigned char*)message,length);
         }
 
     } while (controller.http_i2c);
     vTaskDelete(NULL);
 }
+
 
 void tHttpBpm(void* arg)
 {
@@ -128,13 +175,13 @@ void tHttpBpm(void* arg)
             switch (status)
             {
             case NORMAL:
-                sprintf(message,"WIFI disconnted, your current heartrate is %d bps, normal",bpm);
+                sprintf(message,"WIFI disconnted, your current heartrate is %d bps, NORMAL",bpm);
                 break;
             case HIGH:
-                sprintf(message,"WIFI disconnted, your current heartrate is %d bps, high",bpm);
+                sprintf(message,"WIFI disconnted, your current heartrate is %d bps, HIGH",bpm);
                 break;
              case WARNING:
-                sprintf(message,"WIFI disconnted, your current heartrate is %d bps, warning",bpm);
+                sprintf(message,"WIFI disconnted, your current heartrate is %d bps, WARNING",bpm);
                 break;    
             default:
                 break;
@@ -157,6 +204,7 @@ void app_main(void)
     while (!ble_connected())
     {
          vTaskDelay(500/ portTICK_PERIOD_MS);
+         
     }
     vTaskDelay(2000/ portTICK_PERIOD_MS);
 
@@ -184,17 +232,19 @@ void app_main(void)
         esp_blufi_send_custom_data((unsigned char*)message,length);
     }
     err = nvs_open("storage", NVS_READONLY, &data_handle);
-    ////////////////////////////////////////////////////////////////////////////////////////
-
+    ///////////////////////////////////////////////////////////////////////////////////////
     controller.sensorC  = 1;
     controller.counterC = 1;
     controller.http_i2c = 1;
     controller.http_bpm = 1;
-    xTaskCreatePinnedToCore(tSensor,"sensor",4096,NULL,1,NULL,tskNO_AFFINITY);
-    xTaskCreatePinnedToCore(tPulse,"pulse",4096,NULL,1,NULL,tskNO_AFFINITY);
-    vTaskDelay(10000/ portTICK_PERIOD_MS);
+    xTaskCreatePinnedToCore(tStep,"step",4096,NULL,1,NULL,tskNO_AFFINITY);
+    vTaskDelay(5000/ portTICK_PERIOD_MS);
+    xTaskCreatePinnedToCore(tTemperature,"temperature",4096,NULL,1,NULL,tskNO_AFFINITY);
+    xTaskCreatePinnedToCore(tFallDetect,"fall",4096,NULL,1,NULL,tskNO_AFFINITY);
+    //xTaskCreatePinnedToCore(tPulse,"pulse",4096,NULL,1,NULL,tskNO_AFFINITY);
+    vTaskDelay(5000/ portTICK_PERIOD_MS);
     xTaskCreatePinnedToCore(tHttpSensor,"httpSensor",10240,NULL,1,NULL,tskNO_AFFINITY);
-    xTaskCreatePinnedToCore(tHttpBpm,"httpBpm",10240,NULL,1,NULL,tskNO_AFFINITY);
+    //xTaskCreatePinnedToCore(tHttpBpm,"httpBpm",10240,NULL,1,NULL,tskNO_AFFINITY);
     while(ble_connected())
     {
          vTaskDelay(500/ portTICK_PERIOD_MS);
