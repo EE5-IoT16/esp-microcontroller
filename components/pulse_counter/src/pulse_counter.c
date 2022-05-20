@@ -48,32 +48,6 @@ static void IRAM_ATTR pcnt_example_intr_handler(void *arg)
     xQueueSendFromISR(pcnt_evt_queue, &evt, NULL);
 }
 
-/* Configure LED PWM Controller
- * to output sample pulses at 1 Hz with duty of about 10%
- */
-static void ledc_init(void)
-{
-    // Prepare and then apply the LEDC PWM timer configuration
-    ledc_timer_config_t ledc_timer;
-    ledc_timer.speed_mode       = LEDC_LOW_SPEED_MODE;
-    ledc_timer.timer_num        = LEDC_TIMER_1;
-    ledc_timer.duty_resolution  = LEDC_TIMER_10_BIT;
-    ledc_timer.freq_hz          = 1;  // set output frequency at 1 Hz
-    ledc_timer.clk_cfg = LEDC_AUTO_CLK;
-    ledc_timer_config(&ledc_timer);
-
-    // Prepare and then apply the LEDC PWM channel configuration
-    ledc_channel_config_t ledc_channel;
-    ledc_channel.speed_mode = LEDC_LOW_SPEED_MODE;
-    ledc_channel.channel    = LEDC_CHANNEL_1;
-    ledc_channel.timer_sel  = LEDC_TIMER_1;
-    ledc_channel.intr_type  = LEDC_INTR_DISABLE;
-    ledc_channel.gpio_num   = LEDC_OUTPUT_IO;
-    ledc_channel.duty       = 500; // set duty at about 10%
-    ledc_channel.hpoint     = 0;
-    ledc_channel_config(&ledc_channel);
-}
-
 /* Initialize PCNT functions:
  *  - configure and initialize PCNT
  *  - set up the input filter
@@ -123,7 +97,6 @@ void counter_init(void)
 {
     pcnt_unit = PCNT_UNIT_0;
     /* Initialize LEDC to generate sample pulse signal */
-    ledc_init();
     /* Initialize PCNT event queue and PCNT functions */
     pcnt_evt_queue = xQueueCreate(10, sizeof(pcnt_evt_t));
     pcnt_example_init(pcnt_unit);
