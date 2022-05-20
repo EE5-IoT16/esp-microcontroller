@@ -427,7 +427,7 @@ void step_counter(void)
         }
         nvs_commit(my_handle);
     } 
-   printf("step:%d\n",step/2);
+   //printf("step:%d\n",step/2);
 }
 
 void measure_temperature(void)

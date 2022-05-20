@@ -96,7 +96,6 @@ static void pcnt_example_init(int unit)
 void counter_init(void)
 {
     pcnt_unit = PCNT_UNIT_0;
-    /* Initialize LEDC to generate sample pulse signal */
     /* Initialize PCNT event queue and PCNT functions */
     pcnt_evt_queue = xQueueCreate(10, sizeof(pcnt_evt_t));
     pcnt_example_init(pcnt_unit);
@@ -114,9 +113,7 @@ HeartRateStatus startToCount(int period)
     HeartRateStatus status = NORMAL;
     pcnt_evt_t evt;
     portBASE_TYPE res;
-    /* Wait for the event information passed from PCNT's interrupt handler.
-     * Once received, decode the event type and print it on the serial monitor.
-     */
+    /* Wait for the event information passed from PCNT's interrupt handler. */
     pcnt_counter_pause(pcnt_unit);
     pcnt_counter_clear(pcnt_unit);
     pcnt_counter_resume(pcnt_unit); 
@@ -138,7 +135,7 @@ HeartRateStatus startToCount(int period)
     heartRate += (uint16_t)SLID.prev_count*60;
     heartRate /=2;
     ESP_LOGI(TAG, "Current counter value :%d, heart rate :%d bps", SLID.prev_count,heartRate);
-    if(heartRate <= 120 ) status = NORMAL;
+    if(heartRate <= 120 && heartRate >50) status = NORMAL;
     else if (heartRate <= 180 && heartRate > 120) status = HIGH;
     else  status = WARNING;
     err = nvs_set_u16(my_handle, "bpm", heartRate);
