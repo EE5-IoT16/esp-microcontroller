@@ -192,9 +192,6 @@ static void example_event_callback(esp_blufi_cb_event_t event, esp_blufi_cb_para
         break;
     case ESP_BLUFI_EVENT_REQ_CONNECT_TO_AP:
         BLUFI_INFO("BLUFI requset wifi connect to AP\n");
-        /* there is no wifi callback when the device has already connected to this wifi
-        so disconnect wifi before connection.
-        */
         esp_wifi_disconnect();
         esp_wifi_connect();
         break;
@@ -301,25 +298,6 @@ static void example_event_callback(esp_blufi_cb_event_t event, esp_blufi_cb_para
     case ESP_BLUFI_EVENT_RECV_CUSTOM_DATA:
         BLUFI_INFO("Recv Custom Data %d\n", param->custom_data.data_len);
         esp_log_buffer_hex("Custom Data", param->custom_data.data, param->custom_data.data_len);
-        //esp_blufi_send_custom_data(param->custom_data.data, param->custom_data.data_len);
-        break;
-	case ESP_BLUFI_EVENT_RECV_USERNAME:
-        /* Not handle currently */
-        break;
-	case ESP_BLUFI_EVENT_RECV_CA_CERT:
-        /* Not handle currently */
-        break;
-	case ESP_BLUFI_EVENT_RECV_CLIENT_CERT:
-        /* Not handle currently */
-        break;
-	case ESP_BLUFI_EVENT_RECV_SERVER_CERT:
-        /* Not handle currently */
-        break;
-	case ESP_BLUFI_EVENT_RECV_CLIENT_PRIV_KEY:
-        /* Not handle currently */
-        break;;
-	case ESP_BLUFI_EVENT_RECV_SERVER_PRIV_KEY:
-        /* Not handle currently */
         break;
     default:
         break;

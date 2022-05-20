@@ -230,12 +230,12 @@ void app_main(void)
     controller.http_bpm = 1;
     xTaskCreatePinnedToCore(tStep,"step",4096,NULL,1,NULL,tskNO_AFFINITY);
     vTaskDelay(5000/ portTICK_PERIOD_MS);
-    //xTaskCreatePinnedToCore(tTemperature,"temperature",4096,NULL,1,NULL,tskNO_AFFINITY);
+    xTaskCreatePinnedToCore(tTemperature,"temperature",4096,NULL,1,NULL,tskNO_AFFINITY);
     xTaskCreatePinnedToCore(tFallDetect,"fall",4096,NULL,1,NULL,tskNO_AFFINITY);
-    //xTaskCreatePinnedToCore(tPulse,"pulse",4096,NULL,1,NULL,tskNO_AFFINITY);
+    xTaskCreatePinnedToCore(tPulse,"pulse",4096,NULL,1,NULL,tskNO_AFFINITY);
     vTaskDelay(5000/ portTICK_PERIOD_MS);
-    //xTaskCreatePinnedToCore(tHttpSensor,"httpSensor",10240,NULL,1,NULL,tskNO_AFFINITY);
-    //xTaskCreatePinnedToCore(tHttpBpm,"httpBpm",10240,NULL,1,NULL,tskNO_AFFINITY);
+    xTaskCreatePinnedToCore(tHttpSensor,"httpSensor",10240,NULL,1,NULL,tskNO_AFFINITY);
+    xTaskCreatePinnedToCore(tHttpBpm,"httpBpm",10240,NULL,1,NULL,tskNO_AFFINITY);
     while(ble_connected())
     {
          vTaskDelay(500/ portTICK_PERIOD_MS);
