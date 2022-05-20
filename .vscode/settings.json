@@ -7,6 +7,8 @@
         "bitset": "c",
         "chrono": "c",
         "unordered_map": "c",
-        "algorithm": "c"
+        "algorithm": "c",
+        "__locale": "c",
+        "ios": "c"
     }
 }

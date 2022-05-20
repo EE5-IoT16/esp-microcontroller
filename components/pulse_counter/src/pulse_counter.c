@@ -2,12 +2,20 @@
 static const char *TAG = "pulse_counter";
 
 #define PCNT_H_LIM_VAL      20
-#define PCNT_L_LIM_VAL     -10
-#define PCNT_THRESH1_VAL    16
-#define PCNT_THRESH0_VAL   -5
+#define PCNT_L_LIM_VAL      0
 #define PCNT_INPUT_SIG_IO   4  // Pulse Input GPIO
 #define PCNT_INPUT_CTRL_IO  5  // Control GPIO HIGH=count up, LOW=count down
 #define LEDC_OUTPUT_IO      18 // Output GPIO of a sample 1 Hz pulse generator
+
+
+typedef struct slid_reg
+{
+    int curr_count;
+    int prev_count;
+
+}slid_reg_t;
+
+static struct slid_reg SLID;
 
 int firstCount = 0;
 uint16_t heartRate  = 0;
@@ -81,8 +89,9 @@ static void pcnt_example_init(int unit)
         .channel = PCNT_CHANNEL_0,
         .unit = unit,
         // What to do on the positive / negative edge of pulse input?
-        .pos_mode = PCNT_COUNT_DIS,   // Count up on the positive edge
-        .neg_mode = PCNT_COUNT_INC,   // Keep the counter value on the negative edge
+        .pos_mode = PCNT_COUNT_INC,   // Count up on the positive edge
+        .neg_mode = PCNT_COUNT_DIS, 
+         // Keep the counter value on the negative edge
         // What to do when control input is low or high?
         .lctrl_mode = PCNT_MODE_REVERSE, // Reverse counting direction if low
         .hctrl_mode = PCNT_MODE_KEEP,    // Keep the primary counter mode if high
@@ -94,18 +103,11 @@ static void pcnt_example_init(int unit)
     pcnt_unit_config(&pcnt_config);
 
     /* Configure and enable the input filter */
-    pcnt_set_filter_value(unit,1000);
+    pcnt_set_filter_value(unit,107);
     pcnt_filter_enable(unit);
-
-    /* Set threshold 0 and 1 values and enable events to watch */
-    pcnt_set_event_value(unit, PCNT_EVT_THRES_1, PCNT_THRESH1_VAL);
-   // pcnt_event_enable(unit, PCNT_EVT_THRES_1);
-    pcnt_set_event_value(unit, PCNT_EVT_THRES_0, PCNT_THRESH0_VAL);
-    //pcnt_event_enable(unit, PCNT_EVT_THRES_0);
-    /* Enable events on zero, maximum and minimum limit values */
-    //pcnt_event_enable(unit, PCNT_EVT_ZERO);
-    //pcnt_event_enable(unit, PCNT_EVT_H_LIM);
-    //pcnt_event_enable(unit, PCNT_EVT_L_LIM);
+    
+    pcnt_event_enable(unit, PCNT_EVT_H_LIM);
+    pcnt_event_enable(unit, PCNT_EVT_L_LIM);
     /* Initialize PCNT's counter */
     pcnt_counter_pause(unit);
     pcnt_counter_clear(unit);
@@ -133,7 +135,6 @@ void counter_init(void)
     }
 }
 
-
 HeartRateStatus startToCount(int period)
 {   
     int16_t count = 0;
@@ -151,13 +152,19 @@ HeartRateStatus startToCount(int period)
     if (firstCount == 0)
     {
         firstCount =1;
-        //count++;
         count = count*2;
-
+        SLID.curr_count = SLID.prev_count = 0;
     }
-    heartRate += (uint16_t)count*12;
+    if (abs(count- SLID.curr_count)<=5)
+    {
+        SLID.prev_count = SLID.curr_count;
+        SLID.curr_count = count;
+    }
+    else SLID.prev_count = SLID.curr_count;
+    
+    heartRate += (uint16_t)SLID.prev_count*60;
     heartRate /=2;
-    ESP_LOGI(TAG, "Current counter value :%d, heart rate :%d bps", count,heartRate);
+    ESP_LOGI(TAG, "Current counter value :%d, heart rate :%d bps", SLID.prev_count,heartRate);
     if(heartRate <= 120 ) status = NORMAL;
     else if (heartRate <= 180 && heartRate > 120) status = HIGH;
     else  status = WARNING;

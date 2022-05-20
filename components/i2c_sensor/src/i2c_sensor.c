@@ -280,80 +280,6 @@ void i2cSensor_init(void)
     esp_blufi_send_custom_data((unsigned char*)message,length);
 }
 
-/*
-void readDataFromSensor(int frequency)
-{  
-    int fall = 0;  
-    char message[100]= " ";
-    int ReadingError = 0;
-    vTaskDelay(frequency/ portTICK_PERIOD_MS);
-    uint8_t data[2];
-    if(mpu9250_register_read(ACCEL_XOUT_H, data, 2)!=  ESP_OK) ReadingError++;
-    short ax = (int16_t)((data[0] << 8) | data[1]);
-    printf("ax = %2.1fm/s²   ",((ax-aOffset.axOffset)/32768.0)*4*GravAccel);
-
-    if(mpu9250_register_read(ACCEL_YOUT_H, data, 2)!=  ESP_OK) ReadingError++;
-    short ay = (int16_t)((data[0] << 8) | data[1]);
-    printf("ay = %2.1fm/s²   ",((ay-aOffset.ayOffset)/32768.0)*4*GravAccel);
-
-    stepCounter(ay);
-
-    if(mpu9250_register_read(ACCEL_ZOUT_H, data, 2)!=  ESP_OK) ReadingError++;
-    short az = (int16_t)((data[0] << 8) | data[1]);
-    printf("az = %2.1fm/s²\n",((az-aOffset.azOffset)/32768.0)*4*GravAccel);
-
-    if(mpu9250_register_read(GYRO_XOUT_H, data, 2)!=  ESP_OK)  ReadingError++;
-    short gx = (int16_t)((data[0] << 8) | data[1]);
-    printf("gx = %3.1f°/s    ",((gx-gOffset.gxOffset)/32768.0)*500);
-
-    if(mpu9250_register_read(GYRO_YOUT_H, data, 2)!=  ESP_OK) ReadingError++; 
-    short gy = (int16_t)((data[0] << 8) | data[1]);
-    printf("gy = %3.1f°/s    ",((gy-gOffset.gyOffset)/32768.0)*500);
-
-    if(mpu9250_register_read(GYRO_ZOUT_H, data, 2)!=  ESP_OK)  ReadingError++;
-    short gz = (int16_t)((data[0] << 8) | data[1]);
-    printf("gz = %3.1f°/s\n",((gz-gOffset.gzOffset)/32768.0)*500);
-    
-    printf("xAngle = %3.1f°   ",acos(((ax-aOffset.axOffset)/32768.0)*4)*57.29577);
-    printf("yAngle = %3.1f°   ",acos(((ay-aOffset.ayOffset)/32768.0)*4)*57.29577);
-    printf("zAngle = %3.1f°\n",acos(((az-aOffset.azOffset)/32768.0)*4)*57.29577);
-    
-    if(mpu9250_register_read(TEMP_OUT_H, data, 2)!=  ESP_OK)  ReadingError++;
-    short temp = (int16_t)((data[0] << 8) | data[1]) ;
-    float temperature = 21.00f + ((((float)temp-333.87f*6))/333.87f);
-    printf("temperature = %f°C\n", temperature);
-    printf("state:%d, step:%d\n\n",state,step);
-
-    if(ReadingError != 0)
-    {
-        sprintf(message,"%d error found while reading data from sensors",ReadingError);
-        uint32_t length = strlen(message);
-        esp_blufi_send_custom_data((unsigned char*)message,length);
-    }
-
-    if(nvs_set_u32(my_handle, "step_counter", step)!= ESP_OK)
-    {
-        sprintf(message,"Error occurs when saving step data in memory");
-        uint32_t length = strlen(message);
-        esp_blufi_send_custom_data((unsigned char*)message,length);
-    }
-
-    if(nvs_set_i16(my_handle, "temperaure", temp)!= ESP_OK)
-    {
-        sprintf(message,"Error occurs when saving tempearature data in memory");
-        uint32_t length = strlen(message);
-        esp_blufi_send_custom_data((unsigned char*)message,length);
-    }
-    
-    if(nvs_set_i16(my_handle, "fall", fall)!= ESP_OK)
-    {
-        sprintf(message,"Error occurs when saving fall data in memory");
-        uint32_t length = strlen(message);
-        esp_blufi_send_custom_data((unsigned char*)message,length);
-    }
-
-    err = nvs_commit(my_handle);
-}*/
 static void peakInit(peak_value_t *peak)
 {
     axis_info_t temp;
@@ -501,7 +427,7 @@ void step_counter(void)
         }
         nvs_commit(my_handle);
     } 
-   //printf("step:%d\n",step/2);
+   printf("step:%d\n",step/2);
 }
 
 void measure_temperature(void)
@@ -567,18 +493,20 @@ int detect_fall(void)
     
     //printf("Atotal = %.2f g  ",FALL.At_curr);
     //printf("Gtotal = %d °/s\n",FALL.Gt_curr);
-    if(abs(FALL.At_curr-FALL.At_prev) >= A_tresh || abs(FALL.Gt_curr-FALL.Gt_prev) >= 350)
+    if(abs(FALL.At_curr-FALL.At_prev) >= A_tresh/3 || abs(FALL.Gt_curr-FALL.Gt_prev) >= 260)
     {
         fall_possibility++;
     }
 
-    if (output_counter == 5)
+    if (output_counter == 3)
     {
         output_counter = 0;
         int out = fall_possibility;
         fall_possibility = 0;
-        printf("fall_possibility: %d\n",out);
-        return out;
+        if(out >=2) 
+        {printf("fall_possibility: %d percent\n",out*33);
+        return out;}
+        else return 0;
     }
     else return 0;
 }

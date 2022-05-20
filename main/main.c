@@ -39,14 +39,6 @@ void tStep(void* arg)
     {
         vTaskDelay(50/portTICK_PERIOD_MS);
         step_counter();
-        /*
-        if(nvs_get_i16(data_handle, "fall", &(sensordata.fall)) != ESP_OK)
-        {
-            char message[100]= " ";
-            sprintf(message,"Reading falling data error %d ",sensordata.steps);
-            uint32_t length = strlen(message);
-            esp_blufi_send_custom_data((unsigned char*)message,length);
-        }*/
     }
     while(controller.sensorC);
     unitializedI2C();
@@ -69,7 +61,7 @@ void tFallDetect(void* arg)
 {   
     do
     {
-        vTaskDelay(50/portTICK_PERIOD_MS);
+        vTaskDelay(25/portTICK_PERIOD_MS);
         sensordata.fall = detect_fall();
         if (sensordata.fall != 0)
         {
@@ -80,11 +72,11 @@ void tFallDetect(void* arg)
             else 
             {
                 char message[100]= " ";
-                sprintf(message,"Detect a fall, possibility: %d percent",sensordata.fall*20);
+                sprintf(message,"Detect a fall, possibility: %d percent",sensordata.fall*33);
                 uint32_t length = strlen(message);
                 esp_blufi_send_custom_data((unsigned char*)message,length);
             }
-            vTaskDelay(5000/portTICK_PERIOD_MS);
+            vTaskDelay(1000/portTICK_PERIOD_MS);
         }  
     }
     while(controller.sensorC); 
@@ -141,7 +133,6 @@ void  tHttpSensor(void* arg)
         {
             sample_api_req_hardcoded(1,sensordata.steps,STEPS);
             sample_api_req_hardcoded(1,sensordata.temperature,TEMPERATURE);
-            sample_api_req_hardcoded(1,sensordata.fall,FALLS);
         }
         else
         {
@@ -239,11 +230,11 @@ void app_main(void)
     controller.http_bpm = 1;
     xTaskCreatePinnedToCore(tStep,"step",4096,NULL,1,NULL,tskNO_AFFINITY);
     vTaskDelay(5000/ portTICK_PERIOD_MS);
-    xTaskCreatePinnedToCore(tTemperature,"temperature",4096,NULL,1,NULL,tskNO_AFFINITY);
+    //xTaskCreatePinnedToCore(tTemperature,"temperature",4096,NULL,1,NULL,tskNO_AFFINITY);
     xTaskCreatePinnedToCore(tFallDetect,"fall",4096,NULL,1,NULL,tskNO_AFFINITY);
     //xTaskCreatePinnedToCore(tPulse,"pulse",4096,NULL,1,NULL,tskNO_AFFINITY);
     vTaskDelay(5000/ portTICK_PERIOD_MS);
-    xTaskCreatePinnedToCore(tHttpSensor,"httpSensor",10240,NULL,1,NULL,tskNO_AFFINITY);
+    //xTaskCreatePinnedToCore(tHttpSensor,"httpSensor",10240,NULL,1,NULL,tskNO_AFFINITY);
     //xTaskCreatePinnedToCore(tHttpBpm,"httpBpm",10240,NULL,1,NULL,tskNO_AFFINITY);
     while(ble_connected())
     {
