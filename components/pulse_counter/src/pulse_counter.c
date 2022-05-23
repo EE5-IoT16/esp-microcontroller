@@ -5,7 +5,6 @@ static const char *TAG = "pulse_counter";
 #define PCNT_L_LIM_VAL      0
 #define PCNT_INPUT_SIG_IO   4  // Pulse Input GPIO
 #define PCNT_INPUT_CTRL_IO  5  // Control GPIO HIGH=count up, LOW=count down
-#define LEDC_OUTPUT_IO      18 // Output GPIO of a sample 1 Hz pulse generator
 
 
 typedef struct slid_reg
@@ -42,8 +41,6 @@ static void IRAM_ATTR pcnt_example_intr_handler(void *arg)
     int pcnt_unit = (int)arg;
     pcnt_evt_t evt;
     evt.unit = pcnt_unit;
-    /* Save the PCNT event type that caused an interrupt
-       to pass it to the main program */
     pcnt_get_event_status(pcnt_unit, &evt.status);
     xQueueSendFromISR(pcnt_evt_queue, &evt, NULL);
 }
@@ -134,7 +131,7 @@ HeartRateStatus startToCount(int period)
     
     heartRate += (uint16_t)SLID.prev_count*60;
     heartRate /=2;
-    ESP_LOGI(TAG, "Current counter value :%d, heart rate :%d bps", SLID.prev_count,heartRate);
+    //ESP_LOGI(TAG, "Current counter value :%d, heart rate :%d bps", SLID.prev_count,heartRate);
     if(heartRate <= 120 && heartRate >50) status = NORMAL;
     else if (heartRate <= 180 && heartRate > 120) status = HIGH;
     else  status = WARNING;
