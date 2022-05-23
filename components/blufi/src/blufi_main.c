@@ -7,15 +7,10 @@ static void example_event_callback(esp_blufi_cb_event_t event, esp_blufi_cb_para
 static wifi_config_t sta_config;
 static wifi_config_t ap_config;
 
-/* FreeRTOS event group to signal when we are connected & ready to make a request */
 static EventGroupHandle_t wifi_event_group;
 
-/* The event group allows multiple bits for each event,
-   but we only care about one event - are we connected
-   to the AP with an IP? */
 const int CONNECTED_BIT = BIT0;
 
-/* store the station info for send back to phone */
 static bool gl_sta_connected = false;
 static bool ble_is_connected = false;
 static uint8_t gl_sta_bssid[6];
@@ -70,8 +65,6 @@ static void wifi_event_handler(void* arg, esp_event_base_t event_base,
         gl_sta_ssid_len = event->ssid_len;
         break;
     case WIFI_EVENT_STA_DISCONNECTED:
-        /* This is a workaround as ESP32 WiFi libs don't currently
-           auto-reassociate. */
         gl_sta_connected = false;
         memset(gl_sta_ssid, 0, 32);
         memset(gl_sta_bssid, 0, 6);
@@ -81,8 +74,6 @@ static void wifi_event_handler(void* arg, esp_event_base_t event_base,
         break;
     case WIFI_EVENT_AP_START:
         esp_wifi_get_mode(&mode);
-
-        /* TODO: get config or information of softap, then set to report extra_info */
         if (ble_is_connected == true) {
             if (gl_sta_connected) {
                 esp_blufi_send_wifi_conn_report(mode, ESP_BLUFI_STA_CONN_SUCCESS, 0, NULL);
@@ -125,7 +116,6 @@ static void wifi_event_handler(void* arg, esp_event_base_t event_base,
         } else {
             BLUFI_INFO("BLUFI BLE is not connected yet\n");
         }
-
         esp_wifi_scan_stop();
         free(ap_list);
         free(blufi_ap_list);
@@ -163,8 +153,6 @@ static esp_blufi_callbacks_t example_callbacks = {
 
 static void example_event_callback(esp_blufi_cb_event_t event, esp_blufi_cb_param_t *param)
 {
-    /* actually, should post to blufi_task handle the procedure,
-     * now, as a example, we do it more simply */
     switch (event) {
     case ESP_BLUFI_EVENT_INIT_FINISH:
         BLUFI_INFO("BLUFI init finish\n");

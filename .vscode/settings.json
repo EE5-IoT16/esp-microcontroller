@@ -1,7 +1,7 @@
 {
     "idf.adapterTargetName": "esp32",
     "idf.flashType": "UART",
-    "idf.port": "/dev/cu.usbserial-0231BAA9",
+    "idf.port": "/dev/cu.usbserial-0231BAA4",
     "files.associations": {
         "__bit_reference": "c",
         "bitset": "c",
